@@ -3,7 +3,9 @@ var TinkerStation = function() {
   this.player1Turn = true;
   this.p1Score = 0;
   this.p2Score = 0;
-  this.currQnIdx = null;      //store qns and prevent it from re-generating
+  this.gameResult = null;
+  this.currQnIdx = null; //store qns and prevent it from re-generating
+
 
   //store questions, answers and options inside array
   this.questions = [{
@@ -51,7 +53,7 @@ var TinkerStation = function() {
 
   //It should return an integer that is the number of questions in a game
   this.numberOfQuestions = function() {
-    return this.questions.length -1;
+    return this.questions.length;
   };
 
   //It should return an integer that is the zero-based index of the current question in the quiz
@@ -89,10 +91,9 @@ var TinkerStation = function() {
 
   //It should return a true or false if the quiz is over.
   this.isGameOver = function() {
-    if (this.numberOfQuestions === 0) {
+    if (this.numberOfQuestions() <= 0) {
       return true;
-    }
-    else {
+    } else {
       return false;
     }
   };
@@ -102,11 +103,9 @@ var TinkerStation = function() {
     //checks which player win or draw
     if (this.p1Score > this.p2Score) {
       return 1;
-    }
-    else if(this.p2Score > this.p1Score) {
+    } else if (this.p2Score > this.p1Score) {
       return 2;
-    }
-    else {
+    } else {
       return 3;
     }
     //checks if game is not over
@@ -117,7 +116,7 @@ var TinkerStation = function() {
 
   //It should restart the game so it can be played again.
   this.restart = function() {
-    location.reload();      //reload page
+    location.reload(); //reload page
   };
 
 };
@@ -132,37 +131,43 @@ $(document).ready(function() {
   //console.log(game.numberOfQuestions());
 
   function updateDisplay() {
-    //generate new question index
-    this.qnsNOptionsIdx = game.currentQuestion();
-    //get the question of that index
-    this.newQns = game.questions[qnsNOptionsIdx].question;
-    //get the options of that index
-    this.qnsOptions = game.questions[qnsNOptionsIdx].options;
+    if (game.numberOfQuestions() > 0) {
+      //generate new question index
+      this.qnsNOptionsIdx = game.currentQuestion();
+      //get the question of that index
+      this.newQns = game.questions[qnsNOptionsIdx].question;
+      //get the options of that index
+      this.qnsOptions = game.questions[qnsNOptionsIdx].options;
 
-    //set the question text
-    $('.questions > h3').text(newQns);
+      //set the question text
+      $('.questions > h3').text(newQns);
 
-    //set options in the buttons
-    $('button').each(function(optionsIndex) {
-      //retrieve options array
-      $(this).text(qnsOptions[optionsIndex]);
-    });
+      //set options in the buttons
+      $('button').each(function(optionsIndex) {
+        //retrieve options array
+        $(this).text(qnsOptions[optionsIndex]);
+      });
 
-    //high which player turn
-    if (game.player1Turn === true) {
-      $('.p1Score').css('background-color', '#F2E86D');
-      $('.p2Score').css('background-color', 'transparent');
-    }else {
-      $('.p2Score').css('background-color', '#F2E86D');
-      $('.p1Score').css('background-color', 'transparent');
+      //highlight which player turn
+      if (game.player1Turn === true) {
+        $('.p1Score').css('background-color', '#F2E86D');
+        $('.p2Score').css('background-color', 'transparent');
+      } else {
+        $('.p2Score').css('background-color', '#F2E86D');
+        $('.p1Score').css('background-color', 'transparent');
+      }
+      //show player score
+      $('.p1Score > p').text('Score: ' + game.p1Score);
+      $('.p2Score > p').text('Score: ' + game.p2Score);
+
+      if (game.numberOfQuestions() == 1) {
+        $('h1').text('Final Question!');
+      }
     }
-    //show player score
-    $('.p1Score > p').text('Score: ' + game.p1Score);
-    $('.p2Score > p').text('Score: ' + game.p2Score);
   }
   updateDisplay();
 
-  //seperate logic from display updates
+  //seperating logic from display updates
   function updateGame() {
     //remove the generated set from array
     game.questions.splice(this.qnsNOptionsIdx, 1);
@@ -172,34 +177,57 @@ $(document).ready(function() {
   }
 
   //pop up box
-  function blurtAlert(whichBlurt) {
-
-    switch (whichBlurt) {
-      case 0: //when game over
-        blurt({
-          title: 'Winner is:',
-          text: 'Game Over!',
-          type: 'warning',
-          okButtonText: 'Finish',
-          escapable: false
+  function popAlert(whichPop) {
+    var showResult = "";
+    switch (whichPop) {
+      case 0:
+        //when game over
+        if (game.gameResult == 3) {
+          showResult = 'It\'s a Draw!';
+        } else {
+          showResult = 'Player ' + game.gameResult + ' Wins!';
+        }
+        swal({
+          title: showResult,
+          confirmButtonText: 'Next >>',
+          confirmButtonColor: '#F59E2E',
+          background: '#FACB8F',
+          width: 500,
+          padding: 100,
+          allowEscapeKey: false,
+          allowOutsideClick: false,
+        }).then(function() {
+          swal({
+            title: 'Initializing new game..',
+            text: 'Click START to play again!',
+            confirmButtonText: 'START',
+            confirmButtonColor: '#574D68',
+            background: '#F2E86D'
+          }).then(function() {
+            location.reload();
+          });
         });
         break;
       case 1: //if correct
-        blurt({
+        swal({
           title: 'That\'s right!',
           text: '^_^',
-          type: 'info',
-          okButtonText: 'Next',
-          escapable: true
+          confirmButtonText: 'Next >>',
+          confirmButtonColor: '#1CD17A',
+          background: '#68EBAC',
+          allowEscapeKey: false,
+          allowOutsideClick: false,
         });
         break;
       case 2: //if wrong
-        blurt({
+        swal({
           title: 'Not quite right..',
           text: '._.',
-          type: 'error',
-          okButtonText: 'Next',
-          escapable: true
+          confirmButtonText: 'Next >>',
+          confirmButtonColor: '#C93232',
+          background: '#E08181',
+          allowEscapeKey: false,
+          allowOutsideClick: false,
         });
         break;
       default:
@@ -207,54 +235,29 @@ $(document).ready(function() {
     }
   }
 
-
-
-
-  function mouseClicked() {
-
-
-    //console.log(game.numberOfQuestions());
-    // //check correct answer
-    // if(game.playTurn($(event.target).val())) {
-    //     $('.gameTitle > h1').text('That\'s right!');
-    //     game.player1Turn = !game.player1Turn;
-    //     updateDisplay();
-    // }
-    // else {
-    //   $('.gameTitle > h1').text('Not quite right..');
-    //   game.player1Turn = !game.player1Turn;
-    //   updateDisplay();
-    // }
-
-  }
-  // //generate question
-  // var questionNOptions = game.questions[game.currentQuestion()];
-  // //take question out of array when shown
-  // //game.questions.splice(game.currentQuestion(), 1);
-  //
-  // $('.questions > h3').text(questionNOptions.question);
-  //
-  // $('button').each(function(optionsIndex) {
-  //   //retrieve options array
-  //   $(this).text(questionNOptions.options[optionsIndex]);
-  // });
-
   //adding buttons
   $('button').on('click', function(event) {
     console.log('clicked');
 
-    //updateGame();
-    //updateDisplay();
     //check correct answer
-    if(game.playTurn($(event.target).val())) {
-      blurtAlert(1);
+    if (game.playTurn($(event.target).val())) {
+      popAlert(1);
+      updateGame();
+      updateDisplay();
+    } else {
+      popAlert(2);
       updateGame();
       updateDisplay();
     }
-    else {
-      blurtAlert(2);
-    }
 
+    if (game.isGameOver() === true) {
+      //get winner 1, 2 or 3:draw
+      game.gameResult = game.whoWon();
+      popAlert(0);
+      //game.restart();
+    }
+    console.log(game.numberOfQuestions());
+    console.log(game.questions);
   });
 
 
