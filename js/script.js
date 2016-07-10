@@ -3,7 +3,7 @@ var TinkerStation = function() {
   this.player1Turn = true;
   this.p1Score = 0;
   this.p2Score = 0;
-  this.currQnIdx = null;      //keep qns and prevent it from re-generating
+  this.currQnIdx = null;      //store qns and prevent it from re-generating
 
   //store questions, answers and options inside array
   this.questions = [{
@@ -51,7 +51,7 @@ var TinkerStation = function() {
 
   //It should return an integer that is the number of questions in a game
   this.numberOfQuestions = function() {
-    return this.questions.length;
+    return this.questions.length -1;
   };
 
   //It should return an integer that is the zero-based index of the current question in the quiz
@@ -129,17 +129,16 @@ $(document).ready(function() {
 
   //create new game
   var game = new TinkerStation();
-  console.log(game.player1Turn);
-  //highlight player turn
+  //console.log(game.numberOfQuestions());
+
   function updateDisplay() {
     //generate new question index
-    var qnsNOptionsIdx = game.currentQuestion();
+    this.qnsNOptionsIdx = game.currentQuestion();
     //get the question of that index
-    var newQns = game.questions[qnsNOptionsIdx].question;
+    this.newQns = game.questions[qnsNOptionsIdx].question;
     //get the options of that index
-    var qnsOptions = game.questions[qnsNOptionsIdx].options;
-    //remove the generated set from array
-    game.questions.splice(qnsNOptionsIdx, 1);
+    this.qnsOptions = game.questions[qnsNOptionsIdx].options;
+
     //set the question text
     $('.questions > h3').text(newQns);
 
@@ -163,10 +162,58 @@ $(document).ready(function() {
   }
   updateDisplay();
 
+  //seperate logic from display updates
+  function updateGame() {
+    //remove the generated set from array
+    game.questions.splice(this.qnsNOptionsIdx, 1);
+    //change player turn
+    game.player1Turn = !game.player1Turn;
+
+  }
+
+  //pop up box
+  function blurtAlert(whichBlurt) {
+
+    switch (whichBlurt) {
+      case 0: //when game over
+        blurt({
+          title: 'Winner is:',
+          text: 'Game Over!',
+          type: 'warning',
+          okButtonText: 'Finish',
+          escapable: false
+        });
+        break;
+      case 1: //if correct
+        blurt({
+          title: 'That\'s right!',
+          text: '^_^',
+          type: 'info',
+          okButtonText: 'Next',
+          escapable: true
+        });
+        break;
+      case 2: //if wrong
+        blurt({
+          title: 'Not quite right..',
+          text: '._.',
+          type: 'error',
+          okButtonText: 'Next',
+          escapable: true
+        });
+        break;
+      default:
+
+    }
+  }
+
+
+
+
   function mouseClicked() {
 
-    updateDisplay();
-    console.log(game.numberOfQuestions());
+
+    //console.log(game.numberOfQuestions());
     // //check correct answer
     // if(game.playTurn($(event.target).val())) {
     //     $('.gameTitle > h1').text('That\'s right!');
@@ -196,7 +243,18 @@ $(document).ready(function() {
   $('button').on('click', function(event) {
     console.log('clicked');
 
-    mouseClicked();
+    //updateGame();
+    //updateDisplay();
+    //check correct answer
+    if(game.playTurn($(event.target).val())) {
+      blurtAlert(1);
+      updateGame();
+      updateDisplay();
+    }
+    else {
+      blurtAlert(2);
+    }
+
   });
 
 
