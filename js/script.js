@@ -1,6 +1,6 @@
 //declare the game objects
 var TinkerStation = function() {
-  this.playerTurn = 1;
+  this.player1Turn = true;
   this.p1Score = 0;
   this.p2Score = 0;
   this.currQnIdx = null;      //keep qns and prevent it from re-generating
@@ -54,7 +54,6 @@ var TinkerStation = function() {
     return this.questions.length;
   };
 
-
   //It should return an integer that is the zero-based index of the current question in the quiz
   this.currentQuestion = function() {
     //randomize question and get index
@@ -74,11 +73,10 @@ var TinkerStation = function() {
     return this.questions[this.currQnIdx].options.length;
   };
 
-
   //It should take a single integer, which specifies which choice the current player wants to make. It should return a boolean true/false if the answer is correct.
   this.playTurn = function(choice) {
     if (choice == this.correctAnswer()) {
-      if (this.playerTurn == 1) {
+      if (this.player1Turn === true) {
         this.p1Score++; //player 1 score points
       } else {
         this.p2Score++; //player 2 score points
@@ -124,63 +122,81 @@ var TinkerStation = function() {
 
 };
 
-function mouseClicked() {
-  //generate question
 
-}
-
-
+//LIVE
 $(document).ready(function() {
   console.log('Dom ready');
 
-  //start game
+  //create new game
   var game = new TinkerStation();
+  console.log(game.player1Turn);
+  //highlight player turn
+  function updateDisplay() {
+    //generate new question index
+    var qnsNOptionsIdx = game.currentQuestion();
+    //get the question of that index
+    var newQns = game.questions[qnsNOptionsIdx].question;
+    //get the options of that index
+    var qnsOptions = game.questions[qnsNOptionsIdx].options;
+    //remove the generated set from array
+    game.questions.splice(qnsNOptionsIdx, 1);
+    //set the question text
+    $('.questions > h3').text(newQns);
 
-  function updateStation() {
-    if (game.playerTurn == 1) {
-      game.playerTurn = 2;
-      $('.p2Score').css('background-color', '#F2E86D');
-      $('.p1Score').css('background-color', 'transparent');
-    }else {
-      game.playerTurn = 1;
+    //set options in the buttons
+    $('button').each(function(optionsIndex) {
+      //retrieve options array
+      $(this).text(qnsOptions[optionsIndex]);
+    });
+
+    //high which player turn
+    if (game.player1Turn === true) {
       $('.p1Score').css('background-color', '#F2E86D');
       $('.p2Score').css('background-color', 'transparent');
-
+    }else {
+      $('.p2Score').css('background-color', '#F2E86D');
+      $('.p1Score').css('background-color', 'transparent');
     }
+    //show player score
+    $('.p1Score > p').text('Score: ' + game.p1Score);
+    $('.p2Score > p').text('Score: ' + game.p2Score);
   }
+  updateDisplay();
 
-  //highlight player
-  $('.p1Score').css('background-color', '#F2E86D');
-  //retrieve question text
-  var questionNAns = game.questions[game.currentQuestion()];
-  //take question out of array when shown
-  //game.questions.splice(game.currentQuestion(), 1);
-  //console.log(game.numberOfQuestions());
-  //console.log(questionNAns.options.indexOf(questionNAns.answer));
-  //console.log(questionNAns.options);
-  $('h3').text(questionNAns.question);
-  //In the case of an array, the callback is passed an array index and a corresponding array value each time. The value can also be accessed through the this keyword
-  $('button').each(function(optionsIndex) {
-    //retrieve options array
-    $(this).text(questionNAns.options[optionsIndex]);
-  });
+  function mouseClicked() {
 
+    updateDisplay();
+    console.log(game.numberOfQuestions());
+    // //check correct answer
+    // if(game.playTurn($(event.target).val())) {
+    //     $('.gameTitle > h1').text('That\'s right!');
+    //     game.player1Turn = !game.player1Turn;
+    //     updateDisplay();
+    // }
+    // else {
+    //   $('.gameTitle > h1').text('Not quite right..');
+    //   game.player1Turn = !game.player1Turn;
+    //   updateDisplay();
+    // }
+
+  }
+  // //generate question
+  // var questionNOptions = game.questions[game.currentQuestion()];
+  // //take question out of array when shown
+  // //game.questions.splice(game.currentQuestion(), 1);
+  //
+  // $('.questions > h3').text(questionNOptions.question);
+  //
+  // $('button').each(function(optionsIndex) {
+  //   //retrieve options array
+  //   $(this).text(questionNOptions.options[optionsIndex]);
+  // });
 
   //adding buttons
   $('button').on('click', function(event) {
     console.log('clicked');
 
-    //update turn
-    updateStation();
-    //check if correct answer
-    console.log(game.playTurn($(event.target).val()));
-    console.log(game.p1Score);
-    if(game.playTurn($(event.target).val())) {
-
-    }
-    //console.log(questionNAns.answer);
-    //console.log(game.playTurn());
-    //console.log($(event.target));
+    mouseClicked();
   });
 
 
