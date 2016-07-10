@@ -3,6 +3,7 @@ var TinkerStation = function() {
   this.playerTurn = 1;
   this.p1Score = 0;
   this.p2Score = 0;
+  this.currQnIdx = null;      //keep qns and prevent it from re-generating
 
   //store questions, answers and options inside array
   this.questions = [{
@@ -31,7 +32,7 @@ var TinkerStation = function() {
     options: ["$<newelement>", "$('<newelement>')", "$('newelement')"],
   }, {
     question: "How far can you walk into the woods?",
-    answer: "Half way",
+    answer: "Half way in",
     options: ["Deep in", "Half way in", "Ain't gonna walk in"],
   }, {
     question: "Who among them is the youngest ruler?",
@@ -49,37 +50,34 @@ var TinkerStation = function() {
 
 
   //It should return an integer that is the number of questions in a game
-  this.totalQuestions = function numberOfQuestions() {
+  this.numberOfQuestions = function() {
     return this.questions.length;
   };
 
 
   //It should return an integer that is the zero-based index of the current question in the quiz
-  this.currQn = function currentQuestion() {
+  this.currentQuestion = function() {
     //randomize question and get index
-    var currQnIdx = Math.floor(Math.random() * this.questions.length);
-
-    return currQnIdx;
+    this.currQnIdx = Math.floor(Math.random() * this.questions.length);
+    return this.currQnIdx;
   };
-
 
   //It should return an integer that is the zero-based index the correct answer for the current question
-  this.correctAns = function correctAnswer() {
-    var answer = this.questions[this.currQn()].answer;
-
-    return answer;
+  this.correctAnswer = function() {
+    var answer = this.questions[this.currQnIdx].answer;
+    //return from option index as that is where is its linked up to on screen
+    return this.questions[this.currQnIdx].options.indexOf(answer);
   };
 
-
   //It should return an integer that is the number of choices for the current question
-  this.noOfOptions = function numberOfAnswers() {
-    return this.questions[this.currQn()].options.length;
+  this.numberOfAnswers = function() {
+    return this.questions[this.currQnIdx].options.length;
   };
 
 
   //It should take a single integer, which specifies which choice the current player wants to make. It should return a boolean true/false if the answer is correct.
-  this.playerChoice = function playTurn(choice) {
-    if (choice == this.correctAns) {
+  this.playTurn = function(choice) {
+    if (choice == this.correctAnswer()) {
       if (this.playerTurn == 1) {
         this.p1Score++; //player 1 score points
       } else {
@@ -91,10 +89,9 @@ var TinkerStation = function() {
     }
   };
 
-
   //It should return a true or false if the quiz is over.
-  this.checkGameOver = function isGameOver() {
-    if (this.totalQuestions === 0) {
+  this.isGameOver = function() {
+    if (this.numberOfQuestions === 0) {
       return true;
     }
     else {
@@ -103,7 +100,7 @@ var TinkerStation = function() {
   };
 
   //It should return 0 if the game is not yet finished. Else it should return either 1 or 2 depending on which player won. It should return 3 if the game is a draw.
-  this.checkWinner = function whoWon() {
+  this.whoWon = function() {
     //checks which player win or draw
     if (this.p1Score > this.p2Score) {
       return 1;
@@ -115,13 +112,13 @@ var TinkerStation = function() {
       return 3;
     }
     //checks if game is not over
-    if (this.checkGameOver === false) {
+    if (this.isGameOver === false) {
       return 0;
     }
   };
 
   //It should restart the game so it can be played again.
-  this.reset = function restart() {
+  this.restart = function() {
     location.reload();      //reload page
   };
 
@@ -138,31 +135,52 @@ $(document).ready(function() {
 
   //start game
   var game = new TinkerStation();
+
+  function updateStation() {
+    if (game.playerTurn == 1) {
+      game.playerTurn = 2;
+      $('.p2Score').css('background-color', '#F2E86D');
+      $('.p1Score').css('background-color', 'transparent');
+    }else {
+      game.playerTurn = 1;
+      $('.p1Score').css('background-color', '#F2E86D');
+      $('.p2Score').css('background-color', 'transparent');
+
+    }
+  }
+
+  //highlight player
+  $('.p1Score').css('background-color', '#F2E86D');
   //retrieve question text
-  var question = game.questions[game.currQn()].question;
-  //retrieve options array
-  var currOptions = game.questions[game.currQn()].options;
-  //console.log(game.totalQuestions());
-  console.log(game.questions[game.currQn()].question);
-  console.log('The current question index is ' +game.currQn());
-  //console.log(game.correctAns());
-  //console.log(game.noOfOptions());
-
-  $('h3').text(question);
-  //generate question and options
-
+  var questionNAns = game.questions[game.currentQuestion()];
+  //take question out of array when shown
+  //game.questions.splice(game.currentQuestion(), 1);
+  //console.log(game.numberOfQuestions());
+  //console.log(questionNAns.options.indexOf(questionNAns.answer));
+  //console.log(questionNAns.options);
+  $('h3').text(questionNAns.question);
   //In the case of an array, the callback is passed an array index and a corresponding array value each time. The value can also be accessed through the this keyword
   $('button').each(function(optionsIndex) {
-    $(this).text(currOptions[optionsIndex]);
+    //retrieve options array
+    $(this).text(questionNAns.options[optionsIndex]);
   });
 
 
   //adding buttons
-  $('button').on('click', function() {
+  $('button').on('click', function(event) {
     console.log('clicked');
 
-    //generate question
+    //update turn
+    updateStation();
+    //check if correct answer
+    console.log(game.playTurn($(event.target).val()));
+    console.log(game.p1Score);
+    if(game.playTurn($(event.target).val())) {
 
+    }
+    //console.log(questionNAns.answer);
+    //console.log(game.playTurn());
+    //console.log($(event.target));
   });
 
 
